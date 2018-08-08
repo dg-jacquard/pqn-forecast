@@ -4,7 +4,7 @@ import ForecastItem from "./forecastitem";
 
 const styles = StyleSheet.create({
   content: {
-    marginTop: 50,
+    marginTop: 10,
     marginBottom: 40
   },
   forecastList: {

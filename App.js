@@ -1,9 +1,5 @@
 import React from "react";
-import {
-  StyleSheet,
-  View,
-  Text
-} from "react-native";
+import { StyleSheet, View, Text, NetInfo } from "react-native";
 
 const forecastApiKey = "66a5952b88ae4403c8381be9c7067b82";
 
@@ -15,6 +11,12 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "column",
     justifyContent: "center"
+  },
+  error: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center'
   }
 });
 
@@ -25,11 +27,13 @@ export default class App extends React.Component {
     this.state = {
       latitude: null,
       longitude: null,
-      sublocality: null,
-      locality: null,
+      sublocality: "Vila Mariana",
+      locality: "São Paulo",
       error: null,
       forecast: null,
       loading: true,
+      isConnected: null,
+      locationError: null,
       todayDate:
         today.getDate() +
         "/" +
@@ -39,7 +43,27 @@ export default class App extends React.Component {
     };
   }
 
+  componentWillUnmount() {
+
+    NetInfo.isConnected.removeEventListener(
+      "connectionChange",
+      this.handleConnectionChange
+    );
+  }
+
+  handleConnectionChange = isConnected => {
+    this.setState({ isConnected: isConnected });
+  };
+
   componentDidMount() {
+
+    NetInfo.isConnected.addEventListener("connectionChange", this.handleConnectionChange);
+
+    NetInfo.isConnected.fetch().done(isConnected => {
+      this.setState({ isConnected: isConnected });
+    });
+
+    var self = this;
     navigator.geolocation.getCurrentPosition(
       position => {
         this.setState({
@@ -52,13 +76,15 @@ export default class App extends React.Component {
             position.coords.latitude +
             "," +
             position.coords.longitude +
-            "&sensor=true"
+            // "&key=AIzaSyAA6ZEAN_5arD90ssQVzNWoK1H3XzWGka8"
+            "sensor=true"
         )
           .then(response => response.json())
           .then(responseJson => {
-            // console.log("ADDRESS GEOCODE => " + JSON.stringify(responseJson));
+            console.log("ADDRESS GEOCODE => " + JSON.stringify(responseJson));
             let address_components = responseJson.results[0].address_components;
             this.setState({
+              locationError: false,
               locality: address_components.filter(
                 x => x.types.filter(t => t == "locality").length > 0
               )[0].short_name,
@@ -69,9 +95,10 @@ export default class App extends React.Component {
           })
           .catch(function(error) {
             console.log(
-              "There has been a problem with your fetch operation: " +
+              "geolocation error: " +
                 error.message
             );
+              self.setState({locationError: error});
           });
 
         fetch(
@@ -85,37 +112,45 @@ export default class App extends React.Component {
         )
           .then(response => response.json())
           .then(responseJson => {
+            // console.log(responseJson);
             this.setState({ forecast: responseJson, loading: false });
           })
           .catch(function(error) {
             console.log(
-              "There has been a problem with your fetch operation: " +
+              "API error: " +
                 error.message
             );
+            self.setState({ error: error.message });
           });
       },
-      error => this.setState({ error: error.message }),
+      error => self.setState({ error: error.message }),
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
     );
   }
 
+  render() {
 
-    render() {
-
-      if (this.state.error) {
-        return (<Text>Error: {this.state.error}</Text>);
-      }
-
-      if (!this.state.forecast) return (<Text>Loading</Text>);
-
-      return (
-        <View style={styles.container}>
-          // TODO: identificar que é noite e escurecer o header
-          {this.renderHeader()}
-          {this.renderForecast()}
-        </View>
-      );
+    if(this.state.locationError) {
+      // return <View style={styles.error}><Text>Geo-localização não habilitada.</Text></View>;
     }
+    if (!this.state.isConnected) {
+      return <View style={styles.error}><Text>Você está off-line.</Text></View>;
+    }
+
+    if (this.state.error) {
+      return <View style={styles.error}><Text>Erro: {this.state.error}</Text></View>;
+    }
+
+    if (!this.state.forecast) return <Text>Loading</Text>;
+
+    return (
+      <View style={styles.container}>
+        // TODO: identificar que é noite e escurecer o header
+        {this.renderHeader()}
+        {this.renderForecast()}
+      </View>
+    );
+  }
 
   renderHeader() {
     return (
@@ -128,7 +163,6 @@ export default class App extends React.Component {
   }
 
   renderForecast() {
-    return (<Forecast forecast={this.state.forecast} />);
+    return <Forecast forecast={this.state.forecast} />;
   }
-
 }

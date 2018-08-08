@@ -108,6 +108,7 @@ const Header = (props) => (
       </View>
       <View style={styles.centerView}>
         <View style={styles.centerImageView}>
+        /* TODO: variar os icones de acordo com a api */
           <Image
             source={require("./img/cloudy.png")}
             style={styles.headerIcon}
@@ -119,7 +120,7 @@ const Header = (props) => (
               "\u00B0"}
           </Text>
           <Text style={styles.feelsLike}>
-            {Math.floor(props.forecast.currently.apparentTemperature) + "\u00B0"}
+            Sensação térmica: {Math.floor(props.forecast.currently.apparentTemperature) + "\u00B0"}
           </Text>
         </View>
       </View>
@@ -131,8 +132,8 @@ const Header = (props) => (
           </Text>
         </View>
         <View style={styles.bottomViewRight}>
-          <Text style={styles.low}>{10 + "\u00B0" }C</Text>
-          <Text style={styles.high}>{15 + "\u00B0" }C</Text>
+          // <Text style={styles.low}>{10 + "\u00B0" }C</Text>
+          // <Text style={styles.high}>{15 + "\u00B0" }C</Text>
         </View>
       </View>
     </View>
